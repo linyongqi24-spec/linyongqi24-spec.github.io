@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>掲示板（削除・編集ボタン付き）</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; }
+        textarea { width: 100%; height: 80px; }
+        .post { border-bottom: 1px solid #ccc; padding: 10px 0; }
+        .date { color: #666; font-size: 12px; }
+        .btns { margin-top: 5px; }
+        button { margin-right: 8px; padding: 4px 10px; }
+    </style>
+</head>
+<body>
+
+<h2>掲示板</h2>
+
+<textarea id="text"></textarea>
+<button onclick="postMessage()">投稿</button>
+
+<h3>投稿一覧</h3>
+<div id="posts"></div>
+
+<script>
+    // 投稿を読み込む
+    function loadPosts() {
+        const posts = JSON.parse(localStorage.getItem("bbs_posts") || "[]");
+        const container = document.getElementById("posts");
+        container.innerHTML = "";
+
+        posts.forEach((p, index) => {
+            const div = document.createElement("div");
+            div.className = "post";
+
+            div.innerHTML = `
+                <div>${p.text}</div>
+                <div class="date">${p.date}</div>
+                <div class="btns">
+                    <button onclick="editPost(${index})">編集</button>
+                    <button onclick="deletePost(${index})">削除</button>
+                </div>
+            `;
+
+            container.appendChild(div);
+        });
+    }
+
+    // 投稿する
+    function postMessage() {
+        const text = document.getElementById("text").value.trim();
+        if (!text) return;
+
+        const posts = JSON.parse(localStorage.getItem("bbs_posts") || "[]");
+
+        posts.unshift({
+            text: text,
+            date: new Date().toLocaleString()
+        });
+
+        localStorage.setItem("bbs_posts", JSON.stringify(posts));
+        document.getElementById("text").value = "";
+        loadPosts();
+    }
+
+    // 削除
+    function deletePost(index) {
+        const posts = JSON.parse(localStorage.getItem("bbs_posts") || "[]");
+        if (!confirm("削除しますか？")) return;
+
+        posts.splice(index, 1);
+        localStorage.setItem("bbs_posts", JSON.stringify(posts));
+        loadPosts();
+    }
+
+    // 編集
+    function editPost(index) {
+        const posts = JSON.parse(localStorage.getItem("bbs_posts") || "[]");
+        const newText = prompt("編集内容を入力してください", posts[index].text);
+
+        if (newText === null) return;
+
+        posts[index].text = newText;
+        posts[index].date = new Date().toLocaleString() + "（編集済）";
+
+        localStorage.setItem("bbs_posts", JSON.stringify(posts));
+        loadPosts();
+    }
+
+    // 初期表示
+    loadPosts();
+</script>
+
+</body>
+</html>
