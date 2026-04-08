@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>スレッド</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <!-- Firebase 設定 -->
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+
+<h2 id="thread-title">スレッド</h2>
+
+<div id="messages"></div>
+
+<br>
+
+<textarea id="msg" placeholder="メッセージを書く" rows="4" style="width:100%;"></textarea>
+<br>
+<button id="send">投稿</button>
+
+<script>
+
+
+const ADMIN_PASSWORD = "yuki-admin"; 
+
+
+
+function deleteMessage(messageId) {
+  const pass = prompt("管理者パスワードを入力してください");
+  if (pass !== ADMIN_PASSWORD) {
+    alert("パスワードが違います");
+    return;
+  }
+
+  const ok = confirm("このレスを削除しますか？");
+  if (!ok) return;
+
+  db.collection("areas")
+    .doc(area)
+    .collection("threads")
+    .doc(threadId)
+    .collection("messages")
+    .doc(messageId)
+    .delete()
+    .then(() => {
+      alert("削除しました");
+    });
+}
+
+// 通報処理
+function reportMessage(messageId, uid, text) {
+  const ok = confirm("この投稿を通報しますか？");
+  if (!ok) return;
+
+  db.collection("reports").add({
+    area: area,
+    threadId: threadId,
+    messageId: messageId,
+    uid: uid,
+    text: text,
+    createdAt: new Date()
+  }).then(() => {
+    alert("通報しました。ご協力ありがとうございます。");
+  });
+}
+
+
+
+
+// URLパラメータ取得
+const url = new URL(location.href);
+const area = url.searchParams.get("area");
+const threadId = url.searchParams.get("id");
+
+// ランダムID生成
+function generateID() {
+  return Math.random().toString(36).substring(2, 8);
+}
+
+
+const ID_COLORS = [
+  "#ff6666",
+  "#ff9900",
+  "#33cc33",
+  "#3399ff",
+  "#cc66ff",
+  "#ff66cc",
+  "#6666ff"
+];
+
+
+
+function getDailyColor() {
+  const today = new Date();
+  const key = today.getFullYear() + today.getMonth() + today.getDate();
+  return ID_COLORS[key % ID_COLORS.length];
+}
+
+
+let count = 1;
+const idColor = getDailyColor();
+
+snapshot.forEach(doc => {
+  const m = doc.data();
+  const messageId = doc.id;
+  const date = m.createdAt ? m.createdAt.toDate().toLocaleString() : "";
+
+  box.innerHTML += `
+    <div class="msg">
+      <span class="number">${count}</span>
+      <span class="uid" style="color:${idColor};">ID:${m.uid}</span>
+      <span class="date">${date}</span>
+      <p>${m.text}</p>
+
+      <a href="#" class="quote" onclick="quoteMessage(${count})">引用</a>
+      <a href="#" class="report" onclick="reportMessage('${messageId}', '${m.uid}', \`${m.text}\`)">通報</a>
+      <a href="#" class="delete" onclick="deleteMessage('${messageId}')">削除</a>
+    </div>
+  `;
+
+  count++;
+});
+
+function quoteMessage(number) {
+  const textarea = document.getElementById("msg");
+  textarea.value += `>>${number}\n`;
+  textarea.focus();
+}
+
+// NGワード
+const NG_WORDS = ["殺す", "死ね", "住所", "電話番号", "学校名"];
+
+// NGチェック
+function containsNG(text) {
+  return NG_WORDS.some(word => text.includes(word));
+}
+
+// スレタイトル読み込み
+db.collection("areas")
+  .doc(area)
+  .collection("threads")
+  .doc(threadId)
+  .get()
+  .then(doc => {
+    if (doc.exists) {
+      document.getElementById("thread-title").textContent = doc.data().title;
+    }
+  });
+
+// メッセージ読み込み
+function loadMessages() {
+  db.collection("areas")
+    .doc(area)
+    .collection("threads")
+    .doc(threadId)
+    .collection("messages")
+    .orderBy("createdAt")
+    .onSnapshot(snapshot => {
+      const box = document.getElementById("messages");
+      box.innerHTML = "";
+
+      let count = 1;
+const idColor = getDailyColor();
+
+snapshot.forEach(doc => {
+  const m = doc.data();
+  const messageId = doc.id;
+  const date = m.createdAt ? m.createdAt.toDate().toLocaleString() : "";
+
+  box.innerHTML += `
+    <div class="msg">
+      <span class="number">${count}</span>
+      <span class="uid" style="color:${idColor};">ID:${m.uid}</span>
+      <span class="date">${date}</span>
+      <p>${m.text}</p>
+
+      <a href="#" class="report" onclick="reportMessage('${messageId}', '${m.uid}', \`${m.text}\`)">通報</a>
+    </div>
+  `;
+
+  count++;
+});
+
+snapshot.forEach(doc => {
+  const m = doc.data();
+  const date = m.createdAt ? m.createdAt.toDate().toLocaleString() : "";
+
+  box.innerHTML += `
+    <div class="msg">
+      <span class="number">${count}</span>
+      <span class="uid">ID:${m.uid}</span>
+      <span class="date">${date}</span>
+      <p>${m.text}</p>
+    </div>
+  `;
+
+  count++;
+});
+// 投稿処理
+document.getElementById("send").onclick = async () => {
+  const text = document.getElementById("msg").value.trim();
+  if (!text) return;
+
+  if (containsNG(text)) {
+    alert("NGワードが含まれています。投稿できません。");
+    return;
+  }
+
+  await db.collection("areas")
+    .doc(area)
+    .collection("threads")
+    .doc(threadId)
+    .collection("messages")
+    .add({
+      text: text,
+      uid: generateID(),
+      createdAt: new Date()
+    });
+
+  document.getElementById("msg").value = "";
+};
+
+loadMessages();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,50 @@
+body {
+  font-family: sans-serif;
+  background: #fff;
+  color: #000;
+  padding: 20px;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+  font-size: 18px;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.area-list {
+  line-height: 2.2em;
+}
+.thread-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #ccc;
+}
+.number {
+  font-weight: bold;
+  margin-right: 10px;
+}
+.delete-thread {
+  color: #ff0000;
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+.delete-thread:hover {
+  text-decoration: underline;
+}
+.quote {
+  color: #0066cc;
+  font-size: 12px;
+  margin-right: 10px;
+}
+
+.quote:hover {
+  text-decoration: underline;
+}
